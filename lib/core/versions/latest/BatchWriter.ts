@@ -35,6 +35,7 @@ export default class BatchWriter implements IBatchWriter {
     const batch = operationBuffers.map(
       (buffer) => Operation.create(buffer)
     );
+    console.log('operations processed', batch.map((op) => op.operationHash));
 
     // Create the batch file buffer from the operation batch.
     const batchFileBuffer = await BatchFile.fromOperationBuffers(operationBuffers);
@@ -68,9 +69,11 @@ export default class BatchWriter implements IBatchWriter {
     const fee = FeeManager.computeTransactionFee(normalizedFee, operationBuffers.length, this.transactionFeeMarkupPercentage);
     console.info(`Writing data to blockchain: ${stringToWriteToBlockchain} with fee: ${fee}`);
 
+    await new Promise(r => setTimeout(r, 200)); // Simulate network delays
     await this.blockchain.write(stringToWriteToBlockchain, fee);
 
     // Remove written operations from queue if batch writing is successful.
-    await this.operationQueue.dequeue(batch.length);
+    const dequeued = await this.operationQueue.dequeue(batch.length);
+    console.log('operation dequeued', dequeued.map((buffer) => Operation.create(buffer).operationHash));
   }
 }
